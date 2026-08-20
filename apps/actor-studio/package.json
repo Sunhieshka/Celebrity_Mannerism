@@ -1,0 +1,13 @@
+{
+  "name": "actor-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "React UI and API for actor motion reference projects",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

@@ -1,0 +1,56 @@
+# Python deps for the workspace-shared .venv (used by apps/actor-studio/server's
+# pose_drive.py, seedance_runtime.py, asset_runtime.py — see server/index.js).
+#
+# Direct dependencies (imported by name in those three scripts):
+#   rtmlib                  pose_drive.py — onnxruntime-backed RTMPose (DWPose-style whole-body)
+#   opencv-python / opencv-contrib-python   pose_drive.py (cv2) — required by rtmlib
+#   byteplus-python-sdk-v2   asset_runtime.py (byteplussdkcore), seedance_runtime.py (byteplussdkarkruntime)
+#   tos                      asset_runtime.py — BytePlus object storage
+#
+# Everything else below is a transitive dependency, pinned for reproducibility.
+# Regenerate after adding/removing a direct dependency:
+#   .venv/bin/pip install <package>
+#   .venv/bin/pip freeze > requirements.txt
+#
+# Note: this venv does NOT need torch/torchvision/torchaudio — pose_drive.py runs
+# rtmlib with backend="onnxruntime", so nothing here touches PyTorch.
+
+annotated-types==0.7.0
+anyio==4.12.1
+asyncio==4.0.0
+byteplus-python-sdk-v2==3.0.58
+certifi==2026.7.22
+charset-normalizer==3.5.1
+coloredlogs==15.0.1
+crcmod==1.7
+Deprecated==1.3.1
+exceptiongroup==1.3.1
+flatbuffers==25.12.19
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+humanfriendly==10.0
+idna==3.19
+mpmath==1.3.0
+numpy==2.0.2
+onnxruntime==1.19.2
+opencv-contrib-python==5.0.0.93
+opencv-python==5.0.0.93
+packaging==26.3
+pillow==11.3.0
+protobuf==6.33.6
+pydantic==2.13.4
+pydantic_core==2.46.4
+python-dateutil==2.9.0.post0
+pytz==2026.3.post1
+requests==2.32.5
+rtmlib==0.0.15
+six==1.17.0
+sniffio==1.3.1
+sympy==1.14.0
+tos==2.9.2
+tqdm==4.70.0
+typing-inspection==0.4.2
+typing_extensions==4.16.0
+urllib3==2.6.3
+wrapt==1.16.0
