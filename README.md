@@ -1,4 +1,4 @@
-# dwpose
+# Actor Motion Studio 
 
 Actor Motion Studio — a pipeline for turning uploaded performance footage into
 DWPose-style skeleton-drive videos (via `rtmlib`, an `onnxruntime`-based
