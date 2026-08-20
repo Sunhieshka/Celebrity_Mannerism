@@ -61,9 +61,6 @@ sections below are additive, feature-gated capabilities.
 | `ARK_BASE_URL` | Seedance | Ark API base URL |
 | `SEEDANCE_MODEL` | Seedance | Model identifier used for generation requests |
 
-`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `REPLICATE_API_TOKEN`,
-`RUNWAY_API_KEY`, and `ELEVENLABS_API_KEY` are reserved for future providers and
-unused by the current codebase.
 
 ## Project data layout
 
