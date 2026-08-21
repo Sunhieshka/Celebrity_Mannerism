@@ -60,14 +60,6 @@ Full clips: [`facial-reference.mp4`](docs/media/pipeline-demo/facial-reference.m
 
 **4. These references are passed to create a video using Seedance 2.5.**
 
-```bash
-.venv/bin/python server/seedance_runtime.py create \
-  --model "$SEEDANCE_MODEL" \
-  --prompt "<scene description>" \
-  --image-asset-uri "<@Image1 asset URL — character sheet>" \
-  --body-reference-video-url "<@Video1 asset URL — body skeleton>" \
-  --facial-reference-video-url "<@Video2 asset URL — facial skeleton>"
-```
 
 The backend creates the Seedance task and polls it through the Ark runtime
 API until the generated video is ready.
@@ -95,7 +87,7 @@ see `WORKSPACE_ROOT` in
 ## Prerequisites
 
 - Node.js 18+ and npm
-- Python 3.9
+- Python 3.9 or above
 - A BytePlus credentials 
 
 ## Setup
@@ -176,28 +168,6 @@ seedance references/
 This directory holds real user-uploaded content — it's gitignored, and the
 app's own file-management routes are the intended way to modify it.
 
-## Character sheet asset sync
-
-Uploading an image into `character sheets` triggers, via `server/asset_runtime.py`:
-
-1. Creates an Ark asset group for the project if one doesn't already exist.
-2. Uploads the image bytes to TOS.
-3. Builds a public object URL from `TOS_PUBLIC_URL_PREFIX`.
-4. Calls `CreateAsset` to register that TOS object in the asset library.
-
-Generated motion-reference `.mp4` outputs go through the same TOS upload step,
-and their public URLs are stored in the project's `.actor-studio.json` for use
-as Seedance references.
-
-## Seedance 2.5 generation
-
-Via `server/seedance_runtime.py`:
-
-1. Select one synced character sheet asset as `@Image1`.
-2. Select one generated motion-reference video as `@Video1` (optionally a
-   second as `@Video2` for facial motion).
-3. Edit the prompt template and start generation.
-4. The backend creates a Seedance task and polls it through the Ark runtime API.
 
 ## Working with this repo in Claude Code
 
