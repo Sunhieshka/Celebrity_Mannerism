@@ -33,20 +33,26 @@ A run through the pipeline end to end, using the sample clips under
 <table>
 <tr><th>Body reference (source)</th><th>Skeleton reference (drive)</th></tr>
 <tr>
-<td><video src="docs/media/pipeline-demo/body-reference.mp4" controls width="320"></video></td>
-<td><video src="docs/media/pipeline-demo/body-reference-skeleton.mp4" controls width="320"></video></td>
+<td><img src="docs/media/pipeline-demo/body-reference-frame.jpg" width="320" alt="Body reference frame"/></td>
+<td><img src="docs/media/pipeline-demo/body-reference-skeleton-frame.jpg" width="320" alt="Body skeleton frame"/></td>
 </tr>
 </table>
+
+Full clips: [`body-reference.mp4`](docs/media/pipeline-demo/body-reference.mp4) →
+[`body-reference-skeleton.mp4`](docs/media/pipeline-demo/body-reference-skeleton.mp4)
 
 **2. This face reference is converted to a skeleton reference** — becomes `@Video2`.
 
 <table>
 <tr><th>Face reference (source)</th><th>Skeleton reference (drive)</th></tr>
 <tr>
-<td><video src="docs/media/pipeline-demo/facial-reference.mp4" controls width="320"></video></td>
-<td><video src="docs/media/pipeline-demo/facial-reference-skeleton.mp4" controls width="320"></video></td>
+<td><img src="docs/media/pipeline-demo/facial-reference-frame.jpg" width="320" alt="Facial reference frame"/></td>
+<td><img src="docs/media/pipeline-demo/facial-reference-skeleton-frame.jpg" width="320" alt="Facial skeleton frame"/></td>
 </tr>
 </table>
+
+Full clips: [`facial-reference.mp4`](docs/media/pipeline-demo/facial-reference.mp4) →
+[`facial-reference-skeleton.mp4`](docs/media/pipeline-demo/facial-reference-skeleton.mp4)
 
 **3. The character sheet is uploaded to the asset library** — becomes `@Image1`.
 
@@ -90,8 +96,7 @@ see `WORKSPACE_ROOT` in
 
 - Node.js 18+ and npm
 - Python 3.9
-- A BytePlus / Ark account if you need asset-library sync or Seedance generation
-  (optional for local skeleton generation only)
+- A BytePlus credentials 
 
 ## Setup
 
