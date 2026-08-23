@@ -1,11 +1,13 @@
 # Actor Motion Studio 
 
+AI studios need to produce clips of specific celebrities with the  consistent style of walking, greeting the camera, standing and speaking, and so on for each celebrity or actor. The hard part isn't making a video; it's making the celebrity feel like themselves every single time. Each actor has a signature way of moving — how they walk, how they carry themselves, their gestures, their speaking style. For the result to be believable and on-brand, that mannerism has to come out exactly the same in every video you generate, not drift from one clip to the next.
 
-## Problem statement
+## Solution - Actor Motion Studio
+One solution is to get that consistency by fine-tuning a separate copy of an open-weight video model for each celebrity, which is expensive, slow, and doesn't scale - a new trained model for every name.
+The better way 
 
-LoRA fine-tuning bakes a subject's appearance and behavior into model
-weights via per-subject training — high fidelity, but slow to produce and
-expensive to maintain. Seedance's generations using multimodal references (`@Image1` for appearance, `@Video1`/`@Video2` for body/facial motion) is the training-free alternative: identity and motion are supplied as explicit references at generation time instead of learned. This repo builds and tests that alternative — no training involved anywhere in this pipeline.
+Celebrity Mannerism achieves better repeatable consistency without any fine-tuning, by pairing a DWPose step that captures the celebrity's movement as a fixed, reusable "motion blueprint" from reference footage and saves in Seedance asset library. 
+With Seedance 2 / 2.5 video model renders the celebrity's look (from a reference video / images) and voice and lip-sync (from reference audio) performing that exact motion - so the mannerism stays identical across every run, new celebrities are added by supplying footage and references instead of training a model, and one shared model serves your whole roster.
 
 ## How it works
 
