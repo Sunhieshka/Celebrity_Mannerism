@@ -113,6 +113,11 @@ function App() {
   const [bodyGenerateOverlay, setBodyGenerateOverlay] = useState(true)
   const [facialGenerateSkeleton, setFacialGenerateSkeleton] = useState(true)
   const [facialGenerateOverlay, setFacialGenerateOverlay] = useState(true)
+  const [skeletonToolMode, setSkeletonToolMode] = useState('balanced')
+  const [skeletonToolKptThr, setSkeletonToolKptThr] = useState(0.43)
+  const [skeletonToolAllPeople, setSkeletonToolAllPeople] = useState(false)
+  const [skeletonToolGenerateSkeleton, setSkeletonToolGenerateSkeleton] = useState(true)
+  const [skeletonToolGenerateOverlay, setSkeletonToolGenerateOverlay] = useState(true)
   const [seedancePrompt, setSeedancePrompt] = useState(DEFAULT_SEEDANCE_PROMPT)
   const [selectedCharacterSheetName, setSelectedCharacterSheetName] = useState('')
   const [selectedBodySeedanceVideoName, setSelectedBodySeedanceVideoName] = useState('')
@@ -345,6 +350,54 @@ function App() {
       setMessage(`Generated ${generatedKinds} for ${videoName}.`)
     } catch (processError) {
       setError(processError.message)
+    } finally {
+      endBusy(busyKey)
+    }
+  }
+
+  async function handleGenerateSkeletonTool(videoName) {
+    if (!selectedProject) {
+      return
+    }
+
+    setError('')
+    setMessage('')
+    const busyKey = `skeleton-tool:${videoName}`
+    beginBusy(busyKey)
+
+    try {
+      const project = await requestJson(
+        `${API_BASE}/projects/${selectedProject.id}/skeleton-tool/generate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            videoName,
+            mode: skeletonToolMode,
+            kptThr: Number(skeletonToolKptThr),
+            allPeople: skeletonToolAllPeople,
+            generateSkeleton: skeletonToolGenerateSkeleton,
+            generateOverlay: skeletonToolGenerateOverlay,
+          }),
+        },
+      )
+
+      setProjects((currentProjects) =>
+        currentProjects.map((currentProject) =>
+          currentProject.id === project.id ? project : currentProject,
+        ),
+      )
+      const generatedKinds = [
+        skeletonToolGenerateSkeleton ? 'skeleton reference' : null,
+        skeletonToolGenerateOverlay ? 'overlay reference' : null,
+      ]
+        .filter(Boolean)
+        .join(' and ')
+      setMessage(`Generated ${generatedKinds} for ${videoName}.`)
+    } catch (generateError) {
+      setError(generateError.message)
     } finally {
       endBusy(busyKey)
     }
@@ -914,6 +967,168 @@ function App() {
                       ))
                     )}
                   </div>
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="section-title">
+                  <h2>Skeleton reference generator</h2>
+                  <span>{selectedProject.skeletonToolSourceVideos.length}</span>
+                </div>
+                <p className="muted">
+                  A standalone DWPose/RTMPose tool: upload any video and generate a skeleton
+                  reference with full control over detection settings, independent of the
+                  body/facial motion library above.
+                </p>
+                <div className="seedance-form">
+                  <div className="seedance-grid">
+                    <label className="field">
+                      <span>Processing mode</span>
+                      <select
+                        value={skeletonToolMode}
+                        onChange={(event) => setSkeletonToolMode(event.target.value)}
+                      >
+                        <option value="lightweight">lightweight</option>
+                        <option value="balanced">balanced</option>
+                        <option value="performance">performance</option>
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>Keypoint confidence threshold</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={skeletonToolKptThr}
+                        onChange={(event) => setSkeletonToolKptThr(event.target.value)}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Subject selection</span>
+                      <select
+                        value={skeletonToolAllPeople ? 'all' : 'primary'}
+                        onChange={(event) =>
+                          setSkeletonToolAllPeople(event.target.value === 'all')
+                        }
+                      >
+                        <option value="primary">Primary subject only</option>
+                        <option value="all">Keep every detected person</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="generation-options">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={skeletonToolGenerateSkeleton}
+                        onChange={(event) =>
+                          setSkeletonToolGenerateSkeleton(event.target.checked)
+                        }
+                      />
+                      <span>Skeleton reference generation</span>
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={skeletonToolGenerateOverlay}
+                        onChange={(event) => setSkeletonToolGenerateOverlay(event.target.checked)}
+                      />
+                      <span>Overlay reference generation</span>
+                    </label>
+                  </div>
+                  {!skeletonToolGenerateSkeleton && !skeletonToolGenerateOverlay ? (
+                    <p className="warning-text">
+                      Select at least one generation option before processing.
+                    </p>
+                  ) : null}
+                </div>
+                <label className="upload-box">
+                  <UploadBoxContent
+                    icon="video"
+                    title="Source video"
+                    hint="MP4, MOV · any subject or framing"
+                  />
+                  <input
+                    className="upload-input"
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    onChange={(event) =>
+                      handleUpload(
+                        selectedProject.id,
+                        'skeleton-tool/videos',
+                        event.target.files || [],
+                      )
+                    }
+                  />
+                </label>
+                <div className="file-list">
+                  {selectedProject.skeletonToolSourceVideos.length === 0 ? (
+                    <p className="empty-state">No videos uploaded yet.</p>
+                  ) : (
+                    selectedProject.skeletonToolSourceVideos.map((file) => {
+                      const outputs = findGeneratedOutputs(
+                        selectedProject.skeletonToolOutputs || [],
+                        file.name,
+                      )
+                      return (
+                        <div className="file-card" key={`skeleton-tool-${file.name}`}>
+                          <div className="file-content">
+                            <div>
+                              <strong>{file.name}</strong>
+                              <a href={file.url} target="_blank" rel="noreferrer">
+                                Open source video
+                              </a>
+                            </div>
+                            {outputs.skeleton ? (
+                              <div className="preview-block">
+                                <span className="preview-label">Skeleton preview</span>
+                                <video
+                                  className="video-preview"
+                                  controls
+                                  preload="metadata"
+                                  src={outputs.skeleton.url}
+                                />
+                                {outputs.overlay ? (
+                                  <a href={outputs.overlay.url} target="_blank" rel="noreferrer">
+                                    Open overlay video
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="file-actions">
+                            <button
+                              type="button"
+                              className={
+                                isBusy(`skeleton-tool:${file.name}`) ? 'loading-button' : ''
+                              }
+                              onClick={() => handleGenerateSkeletonTool(file.name)}
+                              disabled={
+                                isBusy(`skeleton-tool:${file.name}`) ||
+                                (!skeletonToolGenerateSkeleton && !skeletonToolGenerateOverlay)
+                              }
+                            >
+                              {isBusy(`skeleton-tool:${file.name}`)
+                                ? 'Generating...'
+                                : 'Generate reference'}
+                            </button>
+                            <button
+                              type="button"
+                              className="danger-button"
+                              onClick={() => handleRemoveFile('skeleton-tool-source', file.name)}
+                              disabled={isBusy(`remove:skeleton-tool-source:${file.name}`)}
+                            >
+                              {isBusy(`remove:skeleton-tool-source:${file.name}`)
+                                ? 'Removing...'
+                                : 'Remove'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
               </div>
 

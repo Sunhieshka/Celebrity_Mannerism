@@ -29,6 +29,9 @@ const SEEDANCE_REFS_DIR_NAME = 'seedance references';
 const REFERENCE_IMAGES_DIR_NAME = 'reference images';
 const REFERENCE_VIDEOS_DIR_NAME = 'reference videos';
 const REFERENCE_AUDIOS_DIR_NAME = 'reference audios';
+const SKELETON_TOOL_DIR_NAME = 'Skeleton reference tool';
+const SKELETON_TOOL_SOURCE_DIR_NAME = 'source videos';
+const SKELETON_TOOL_OUTPUT_DIR_NAME = 'generated';
 
 const BYTEPLUS_PROJECT_NAME =
   process.env.ARK_PROJECT_NAME || process.env.ARK_PROJECT || 'default';
@@ -108,6 +111,9 @@ function buildProjectPaths(projectSlug) {
   const processed = path.join(motionReferences, PROCESSED_DIR_NAME);
   const processedBody = path.join(processed, BODY_DIR_NAME);
   const processedFacial = path.join(processed, FACIAL_DIR_NAME);
+  const skeletonTool = path.join(root, SKELETON_TOOL_DIR_NAME);
+  const skeletonToolSource = path.join(skeletonTool, SKELETON_TOOL_SOURCE_DIR_NAME);
+  const skeletonToolOutput = path.join(skeletonTool, SKELETON_TOOL_OUTPUT_DIR_NAME);
   const metadata = path.join(root, PROJECT_METADATA_FILE);
 
   return {
@@ -123,6 +129,9 @@ function buildProjectPaths(projectSlug) {
     processed,
     processedBody,
     processedFacial,
+    skeletonTool,
+    skeletonToolSource,
+    skeletonToolOutput,
     metadata,
   };
 }
@@ -143,6 +152,9 @@ async function ensureProjectDirs(projectSlug) {
       paths.processed,
       paths.processedBody,
       paths.processedFacial,
+      paths.skeletonTool,
+      paths.skeletonToolSource,
+      paths.skeletonToolOutput,
     ].map((dirPath) => fsp.mkdir(dirPath, { recursive: true })),
   );
   return paths;
@@ -648,6 +660,14 @@ async function readProject(projectSlug) {
     remote: metadata.media?.processedByFile?.[`facial:${file.name}`] || null,
     referenceType: 'facial',
   }));
+  const skeletonToolSourceVideos = await listFiles(paths.skeletonToolSource, projectSlug, [
+    SKELETON_TOOL_DIR_NAME,
+    SKELETON_TOOL_SOURCE_DIR_NAME,
+  ]);
+  const skeletonToolOutputs = await listFiles(paths.skeletonToolOutput, projectSlug, [
+    SKELETON_TOOL_DIR_NAME,
+    SKELETON_TOOL_OUTPUT_DIR_NAME,
+  ]);
   const motionReferences = [...bodyReferences, ...facialReferences];
   const processed = [...processedBody, ...processedFacial];
 
@@ -666,6 +686,9 @@ async function readProject(projectSlug) {
       processed: paths.processed,
       processedBody: paths.processedBody,
       processedFacial: paths.processedFacial,
+      skeletonTool: paths.skeletonTool,
+      skeletonToolSource: paths.skeletonToolSource,
+      skeletonToolOutput: paths.skeletonToolOutput,
     },
     assetLibrary: {
       groupId: metadata.assetLibrary.groupId,
@@ -691,6 +714,8 @@ async function readProject(projectSlug) {
     motionReferences,
     characterSheets,
     processed,
+    skeletonToolSourceVideos,
+    skeletonToolOutputs,
   };
 }
 
@@ -737,6 +762,12 @@ function resolveCategoryDirectory(paths, category) {
   if (category === 'processed-facial') {
     return paths.processedFacial;
   }
+  if (category === 'skeleton-tool-source') {
+    return paths.skeletonToolSource;
+  }
+  if (category === 'skeleton-tool-output') {
+    return paths.skeletonToolOutput;
+  }
   throw new Error('Unsupported file category.');
 }
 
@@ -757,6 +788,12 @@ async function removeFileIfExists(targetPath) {
 function runPoseDrive(videoPath, outputDir, mode, options = {}) {
   return new Promise((resolve, reject) => {
     const args = [POSE_SCRIPT, videoPath, '--out-dir', outputDir, '--mode', mode];
+    if (options.kptThr !== undefined && options.kptThr !== null && options.kptThr !== '') {
+      args.push('--kpt-thr', `${options.kptThr}`);
+    }
+    if (options.allPeople) {
+      args.push('--all-people');
+    }
     if (!options.generateSkeleton) {
       args.push('--no-skeleton');
     }
@@ -1125,6 +1162,69 @@ app.post('/api/projects/:projectId/process', async (req, res, next) => {
         outputPaths.overlay,
       );
     }
+    const project = await readProject(req.params.projectId);
+    res.json(project);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post(
+  '/api/projects/:projectId/skeleton-tool/videos',
+  upload.array('files'),
+  async (req, res, next) => {
+    const paths = await ensureProjectDirs(req.params.projectId);
+    return handleReferenceUpload(req, res, next, paths.skeletonToolSource, 'skeleton reference video');
+  },
+);
+
+app.post('/api/projects/:projectId/skeleton-tool/generate', async (req, res, next) => {
+  try {
+    const {
+      videoName,
+      mode = 'balanced',
+      kptThr = 0.43,
+      allPeople = false,
+      generateSkeleton = true,
+      generateOverlay = true,
+    } = req.body || {};
+
+    if (!videoName) {
+      res.status(400).json({ error: 'A source video must be selected.' });
+      return;
+    }
+    if (!generateSkeleton && !generateOverlay) {
+      res.status(400).json({ error: 'Select at least one reference output to generate.' });
+      return;
+    }
+    const parsedKptThr = Number(kptThr);
+    if (!Number.isFinite(parsedKptThr) || parsedKptThr < 0 || parsedKptThr > 1) {
+      res.status(400).json({ error: 'Keypoint confidence threshold must be a number between 0 and 1.' });
+      return;
+    }
+
+    const paths = await ensureProjectDirs(req.params.projectId);
+    const videoPath = path.join(paths.skeletonToolSource, path.basename(videoName));
+    if (!(await pathExists(videoPath))) {
+      res.status(404).json({ error: 'Selected video does not exist.' });
+      return;
+    }
+
+    const outputPaths = getGeneratedOutputPaths(videoPath, paths.skeletonToolOutput);
+    if (!generateSkeleton) {
+      await removeFileIfExists(outputPaths.skeleton);
+    }
+    if (!generateOverlay) {
+      await removeFileIfExists(outputPaths.overlay);
+    }
+
+    await runPoseDrive(videoPath, paths.skeletonToolOutput, mode, {
+      generateSkeleton,
+      generateOverlay,
+      kptThr: parsedKptThr,
+      allPeople: Boolean(allPeople),
+    });
+
     const project = await readProject(req.params.projectId);
     res.json(project);
   } catch (error) {
