@@ -2,7 +2,7 @@
 
 AI studios need to produce clips of specific celebrities with the  consistent style of walking, greeting the camera, standing and speaking, and so on for each celebrity or actor. The hard part isn't making a video; it's making the celebrity feel like themselves every single time. Each actor has a signature way of moving — how they walk, how they carry themselves, their gestures, their speaking style. For the result to be believable and on-brand, that mannerism has to come out exactly the same in every video you generate, not drift from one clip to the next.
 
-## Solution - Actor Motion Studio
+## Solution 
 One solution is to get that consistency by fine-tuning a separate copy of an open-weight video model for each celebrity, which is expensive, slow, and doesn't scale - a new trained model for every name.
 The better way 
 
